@@ -17,6 +17,12 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const BUILD = join(ROOT, 'build');
 const ASPECT = process.env.ASPECT || '9:16';
+// 자막 폰트: OS별 한국어 기본값. 없는 OS/환경은 Noto Sans CJK KR 로 접는다.
+// 환경변수 CAPTION_FONT 로 강제 지정 가능. (libass 가 이름으로 폰트를 찾는다 → §15)
+const CAPTION_FONT = process.env.CAPTION_FONT || ({
+  darwin: 'Apple SD Gothic Neo',
+  win32: 'Malgun Gothic',
+}[process.platform] || 'Noto Sans CJK KR');
 const [OW, OH] = ASPECT === '16:9' ? [1920, 1080] : [1080, 1920];
 
 const tl = JSON.parse(readFileSync(join(BUILD, 'timeline.json'), 'utf8'));
@@ -46,8 +52,8 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding
-Style: Talk,Apple SD Gothic Neo,${talkSize},&H00FFFFFF,&H00FFFFFF,${talkOutlineCol},&HA0000000,1,0,0,0,100,100,0,0,${talkBorder},2,80,80,${talkMargin},1
-Style: Card,Apple SD Gothic Neo,${cardSize},&H0022E0FF,&H0022E0FF,&H00102030,&HB0000000,1,0,0,0,100,100,1,0,3,14,0,8,60,60,${cardMargin},1
+Style: Talk,${CAPTION_FONT},${talkSize},&H00FFFFFF,&H00FFFFFF,${talkOutlineCol},&HA0000000,1,0,0,0,100,100,0,0,${talkBorder},2,80,80,${talkMargin},1
+Style: Card,${CAPTION_FONT},${cardSize},&H0022E0FF,&H0022E0FF,&H00102030,&HB0000000,1,0,0,0,100,100,1,0,3,14,0,8,60,60,${cardMargin},1
 
 [Events]
 Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
@@ -70,4 +76,4 @@ flush();
 
 writeFileSync(join(BUILD, 'captions.ass'), head + ev.join('\n') + '\n');
 const cards = ev.filter(e => e.includes(',Card,')).length;
-console.log(`자막: 대사 ${tl.lines.length}줄 / 카드 ${cards}개 → build/captions.ass`);
+console.log(`자막: 대사 ${tl.lines.length}줄 / 카드 ${cards}개 / 폰트 ${CAPTION_FONT} → build/captions.ass`);

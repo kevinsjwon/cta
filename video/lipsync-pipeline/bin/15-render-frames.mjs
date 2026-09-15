@@ -60,10 +60,17 @@ const nFrames = Math.ceil(tl.total * FPS);
 const assPath = join(BUILD, 'captions.ass').replace(/([:\\])/g, '\\$1');
 const outFile = join(OUT, `${NAME}.mp4`);
 
+// fontsdir: darwin 은 시스템 폰트 폴더를 명시(기존 동작 보존).
+// linux/win 은 libass 가 fontconfig 로 이름 해석을 하므로 지정하지 않는다.
+// (강제로 폴더를 주고 싶으면 FONTS_DIR 환경변수로 지정 가능.)
+const fontsdir = process.env.FONTS_DIR
+  ? `:fontsdir=${process.env.FONTS_DIR.replace(/([:\\])/g, '\\$1')}`
+  : (process.platform === 'darwin' ? ':fontsdir=/System/Library/Fonts' : '');
+
 const ff = spawn(FFMPEG, ['-y', '-hide_banner', '-loglevel', 'error',
   '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', `${OW}x${OH}`, '-framerate', String(FPS), '-i', 'pipe:0',
   '-i', join(BUILD, 'master.wav'),
-  '-filter_complex', `[0:v]ass='${assPath}':fontsdir=/System/Library/Fonts,format=yuv420p[v]`,
+  '-filter_complex', `[0:v]ass='${assPath}'${fontsdir},format=yuv420p[v]`,
   '-map', '[v]', '-map', '1:a', '-c:v', 'libx264', '-preset', 'medium', '-crf', '18',
   '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', outFile],
   { stdio: ['pipe', 'inherit', 'inherit'] });

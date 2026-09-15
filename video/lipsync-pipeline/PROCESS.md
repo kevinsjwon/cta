@@ -68,9 +68,26 @@ say -v Yuna -o /tmp/t.aiff "테스트" < /dev/null && ls -l /tmp/t.aiff
 > 뜨지만 **실제 발화는 Yuna만** 됐다. 나머지는 1.5KB 무음 파일을 생성한다.
 > → 두 번째 목소리는 **Yuna를 피치 시프트**해서 만든다 (§4).
 
-**macOS가 아닌 환경**: `say` 대신 다른 TTS로 교체한다. 교체 지점은
-`bin/01-build-audio.mjs`의 `sh('say', [...])` 한 줄뿐이다. 산출물 규약(줄별 wav 파일 +
-`build/timeline.json`)만 지키면 이후 단계는 그대로 동작한다.
+**OS별 실행 (macOS / Windows / Linux 지원).** `01-build-audio` 가 `process.platform` 을
+감지해 TTS 엔진을 고른다. 산출물 규약(줄별 wav + `build/timeline.json` + 화자별 트랙·
+compact·master)은 OS 와 무관하게 동일하며, 피치 시프트 등 다운스트림(§4)은 그대로다.
+자막 폰트도 OS별로 자동 선택한다(`02b-captions`, `15-render-frames`).
+
+| OS | TTS 엔진 | 준비 | 자막 폰트 |
+|---|---|---|---|
+| darwin | `say -v Yuna -r <wpm>` (기존과 동일) | 시스템 설정 > 손쉬운 사용 > 음성 콘텐츠 에서 Yuna 설치 | Apple SD Gothic Neo + `fontsdir=/System/Library/Fonts` |
+| win32 | PowerShell + System.Speech(SAPI). `SelectVoice`→`SetOutputToWaveFile`→`Speak` | 한국어 음성(예: 'Microsoft Heami Desktop') 설치 | Malgun Gothic (fontconfig/시스템 해석) |
+| linux | `piper`(모델 지정 시) → 없으면 `espeak-ng -v ko -s <speed> -w` | `sudo apt-get install -y espeak-ng fonts-noto-cjk` | Noto Sans CJK KR (fontconfig) |
+
+- **wpm → 엔진 속도 근사(문서화된 값)**: espeak `-s` = round(wpm×1.1)(실측: Yuna 대비 느려
+  1.1배가 골든 54s에 근접), SAPI Rate = clamp(round((wpm−200)/25), −10, 10), piper
+  `length_scale` = 200/wpm. 엔진별로 음질·정확한 길이는 다르지만 **시각 파이프라인은 동일**하다.
+  총길이가 목표 범위(§6)를 벗어나면 01 이 exit 2 + 보정 지시를 낸다.
+- **엔진 부재 시** OS별 설치 안내와 함께 즉시 중단한다(무음 파일 생성 금지).
+- **환경변수**: `TTS_ENGINE=say|sapi|espeak|piper`(강제), `SAPI_VOICE`, `PIPER_MODEL`,
+  `CAPTION_FONT`, `FONTS_DIR`.
+- macOS 음성 자동탐지(`say -v '?'`)는 darwin 에서만 돈다(`20-scan-assets`). 다른 OS 는
+  화자 ID 를 placeholder voice 로 둔 기본 `speakers.tsv` 를 쓴다(voice 열은 darwin 에서만 유효).
 
 ---
 
@@ -185,8 +202,8 @@ AI	에이아이
 
 ## 4. 오디오 생성 방식 (01단계)
 
-1. 줄별로 TTS 합성 → aiff
-2. 피치 시프트 → wav (아래 필터 체인)
+1. 줄별로 TTS 합성 → base 오디오 (darwin=aiff/22050Hz, espeak-ng=wav/22050Hz, SAPI/piper=wav). §1의 OS별 엔진 참고
+2. 피치 시프트 → wav (아래 필터 체인. 엔진과 무관 — 맨 앞 `aresample=44100`이 레이트를 정규화한다)
 3. 길이 실측 → 타임라인 계산 (`start`, `end` 누적)
 4. **화자별 풀길이 트랙** 생성: 자기 대사만 들리고 나머지는 무음
 5. 마스터 믹스 (`amix` + `alimiter`)
