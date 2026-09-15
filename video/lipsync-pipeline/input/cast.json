@@ -6,11 +6,11 @@
       "name": "너굴",
       "role": "답변자",
       "front": {
-        "기본": "closeup/close_01_기본.png.png",
-        "설명": "closeup/close_02_설명.png.png",
-        "경고": "closeup/close_03_경고.png.png"
+        "기본": "closeup/close_01_기본.png",
+        "설명": "closeup/close_02_설명.png",
+        "경고": "closeup/close_03_경고.png"
       },
-      "back": "closeup/close_04_뒤통수.png.png",
+      "back": "closeup/close_04_뒤통수.png",
       "neutral": "기본",
       "mouthOpenFrom": "설명",
       "overrides": {
@@ -21,18 +21,18 @@
       "name": "토리",
       "role": "질문자",
       "front": {
-        "기본": "closeup/tori_01_기본.png.png",
-        "입벌림": "closeup/tori_01b_입벌림.png.png",
-        "놀람": "closeup/tori_02_놀람.png.png"
+        "기본": "closeup/tori_01_기본.png",
+        "입벌림": "closeup/tori_01b_입벌림.png",
+        "놀람": "closeup/tori_02_놀람.png"
       },
-      "back": "closeup/tori_03_뒤통수.png.png",
+      "back": "closeup/tori_03_뒤통수.png",
       "neutral": "기본",
       "mouthOpenFrom": "입벌림"
     }
   },
   "scenes": [
-    "closeup/01_대화장면_너굴정면.png.png",
-    "closeup/02_대화장면_토리정면.png.png"
+    "closeup/01_대화장면_너굴정면.png",
+    "closeup/02_대화장면_토리정면.png"
   ],
   "_note": "overrides 는 원본 아트 결함으로 자동 판정이 못 미칠 때만. 23-measure 출력과 실제 영상 1:1 확인 후 넣을 것.",
   "plates": {
