@@ -2,3 +2,7 @@ node_modules/
 build/
 output/
 .DS_Store
+
+# 파이프라인이 실측으로 생성하는 파일 (커밋 금지)
+input/exprmap.json
+input/layout_*.json

@@ -119,22 +119,31 @@ if (!existsSync(join(IN, 'readings.tsv'))) {
   console.log('  + input/readings.tsv (빈 파일 — 02 가 미등록 표기를 알려주면 채운다)');
 }
 if (!existsSync(join(IN, 'speakers.tsv'))) {
-  // ⚠️ macOS 는 **미설치 음성도 목록에 표시한다.** 실제로 합성해 보고 파일 크기로 거른다(§10).
-  let voices = [];
-  try {
-    voices = execSync("say -v '?'", { encoding: 'utf8' }).split('\n')
-      .filter(l => /\bko_KR\b/.test(l)).map(l => l.split(/\s{2,}|\t/)[0].replace(/\s*\(.*\)$/, '').trim())
-      .filter(Boolean);
-  } catch {}
+  // 음성 자동탐지는 macOS 전용이다(`say -v '?'`). 다른 OS 는 탐지를 건너뛰고
+  // 화자 ID 를 voice 로 둔 기본 speakers.tsv 를 쓴다. 01-build-audio 가 OS별 엔진으로
+  // 합성하며(§4), voice 열은 darwin 에서만 실제로 쓰인다(espeak=ko, SAPI=SAPI_VOICE).
   let voice = null;
-  for (const v of voices) {
-    const t = join(tmpdir(), `v_${Date.now()}.aiff`);
+  if (process.platform === 'darwin') {
+    // ⚠️ macOS 는 **미설치 음성도 목록에 표시한다.** 실제로 합성해 보고 파일 크기로 거른다(§10).
+    let voices = [];
     try {
-      execSync(`say -v ${JSON.stringify(v)} -o ${JSON.stringify(t)} "테스트" < /dev/null`, { stdio: 'ignore' });
-      if (statSync(t).size > 20000) { voice = v; }
-      rmSync(t, { force: true });
+      voices = execSync("say -v '?'", { encoding: 'utf8' }).split('\n')
+        .filter(l => /\bko_KR\b/.test(l)).map(l => l.split(/\s{2,}|\t/)[0].replace(/\s*\(.*\)$/, '').trim())
+        .filter(Boolean);
     } catch {}
-    if (voice) break;
+    for (const v of voices) {
+      const t = join(tmpdir(), `v_${Date.now()}.aiff`);
+      try {
+        execSync(`say -v ${JSON.stringify(v)} -o ${JSON.stringify(t)} "테스트" < /dev/null`, { stdio: 'ignore' });
+        if (statSync(t).size > 20000) { voice = v; }
+        rmSync(t, { force: true });
+      } catch {}
+      if (voice) break;
+    }
+  } else {
+    // Linux/Windows: 화자 ID 를 voice placeholder 로 사용한다.
+    voice = Object.keys(cast.speakers)[0] || 'ko';
+    console.log(`  (non-darwin: 음성 자동탐지 생략 — 01-build-audio 가 ${process.platform} 엔진으로 합성)`);
   }
   if (!voice) {
     console.log('  ⚠️ 설치된 ko_KR 음성을 찾지 못했습니다 → input/speakers.tsv 를 직접 작성하세요');
