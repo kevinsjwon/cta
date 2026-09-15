@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "flyworks": {
+      "command": "uvx",
+      "args": ["flyworks-mcp", "-y"],
+      "env": {
+        "FLYWORKS_API_TOKEN": "2aeda3bcefac46a3",
+        "FLYWORKS_API_BASE_URL": "https://hfw-api.hifly.cc/api/v2/hifly",
+        "FLYWORKS_MCP_BASE_PATH": "/Users/kevinsjwon/lipsync-pipeline/output"
+      }
+    }
+  }
+}
