@@ -59,8 +59,9 @@ function hasCmd(cmd) {
 // 오디오 길이만 달라질 수 있으므로 목표 범위(§6)를 벗어나면 01 이 보정 지시를 낸다.
 const ESPEAK_BIN = hasCmd('espeak-ng') ? 'espeak-ng' : (hasCmd('espeak') ? 'espeak' : 'espeak-ng');
 const rateMap = {
-  // espeak `-s` 는 words/min. 한국어는 같은 수치에서 say 보다 빠르게 들려 0.7 배로 근사.
-  espeak: wpm => Math.max(80, Math.min(450, Math.round(wpm * 0.7))),
+  // espeak `-s` 는 words/min. 한국어는 같은 수치에서 macOS `say` 보다 느리게 읽힌다.
+  // 실측(§6 골든 54s 기준)으로 say wpm 의 약 1.1 배를 주면 비슷한 총길이가 나온다.
+  espeak: wpm => Math.max(80, Math.min(450, Math.round(wpm * 1.1))),
   // piper `--length_scale` 은 작을수록 빠름. 기준 200wpm = 1.0.
   piper: wpm => +(200 / Math.max(1, wpm)).toFixed(3),
   // SAPI Rate 는 정수 -10..10. 기준 200wpm = 0, 25wpm 당 1 단계.
