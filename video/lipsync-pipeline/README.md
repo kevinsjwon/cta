@@ -30,7 +30,8 @@
 
 이 폴더에는 이제 **실행 스크립트와 원본 자료(캐릭터 이미지·대본)까지** 들어 있습니다.
 문서·설정만 있던 상태에서, 실제로 영상을 만드는 데 필요한 파일들이 모두 갖춰졌습니다.
-남은 것은 실행 환경(맥의 한국어 TTS) 준비뿐입니다.
+이제 **맥(macOS)뿐 아니라 Windows·Linux/클라우드에서도** 영상을 렌더할 수 있습니다
+(OS별 한국어 TTS와 한국어 폰트만 준비하면 됩니다 — §3).
 
 ### 지금 있는 것
 | 파일/폴더 | 내용 |
@@ -47,7 +48,8 @@
 ### 아직 필요한 것 (영상을 실제로 "렌더"하려면)
 | 항목 | 설명 |
 | --- | --- |
-| **맥(macOS) + 한국어 음성** | 대사를 목소리로 읽는 `say` 기능이 맥에 내장돼 있고, 한국어 음성(Yuna)이 실제로 설치돼 있어야 합니다. 맥이 아니면 이 부분만 다른 TTS로 바꿔야 합니다(§3, `PROCESS.md` §1·§10). |
+| **OS별 한국어 TTS** | 대사를 목소리로 읽는 도구입니다. macOS는 내장 `say`(한국어 음성 Yuna), Windows는 내장 SAPI(한국어 음성 예: Microsoft Heami), Linux/클라우드는 `espeak-ng`(또는 `piper`+한국어 모델). 코드가 OS를 감지해 알맞은 엔진을 씁니다(§3, `PROCESS.md` §1·§4). |
+| **한국어 폰트** | 자막이 한글로 보이려면 한국어 폰트가 필요합니다. macOS는 Apple SD Gothic Neo(내장), Windows는 Malgun Gothic(내장), Linux는 Noto Sans CJK KR(`fonts-noto-cjk`). 코드가 OS별 기본값을 고릅니다(§3). |
 
 > 코드와 자료는 모두 저장소에 들어와 있으므로, 위 실행 환경만 준비되면
 > `PROCESS.md`의 "11. 실행 순서"를 그대로 따라 영상을 만들 수 있습니다.
@@ -59,11 +61,21 @@
 ## 3. 실행에 필요한 환경
 
 - **Node.js 18 버전 이상** (제작 검증 버전: v24.18.0)
-- **macOS(맥) 권장.** 대사를 한국어 목소리로 읽는 기능(`say`)이 맥에 내장되어 있어서입니다.
-  - 맥이라도 **한국어 음성(Yuna)이 실제로 설치되어 있어야** 합니다.
-    (시스템 설정 → 손쉬운 사용 → 음성 콘텐츠에서 내려받습니다.)
-  - 맥이 아니면 음성 읽어 주는 부분만 다른 프로그램으로 바꿔야 합니다
-    (`PROCESS.md` §1, §10 참고).
+- **운영체제: macOS / Windows / Linux 모두 지원.** 코드가 `process.platform`을 감지해
+  OS에 맞는 한국어 TTS 엔진과 자막 폰트를 자동으로 고릅니다. OS별 준비물은 아래와 같습니다.
+
+| OS | 한국어 TTS | 자막 폰트 | 준비 방법 |
+| --- | --- | --- | --- |
+| **macOS** | 내장 `say` (음성 Yuna) | Apple SD Gothic Neo (내장) | 시스템 설정 → 손쉬운 사용 → 음성 콘텐츠에서 Yuna 내려받기 |
+| **Windows** | 내장 SAPI (음성 예: Microsoft Heami) | Malgun Gothic (내장) | 설정 → 시간 및 언어 → 음성에서 한국어 음성 추가 |
+| **Linux/클라우드** | `espeak-ng` (또는 `piper`+한국어 `.onnx` 모델) | Noto Sans CJK KR | `sudo apt-get install -y espeak-ng fonts-noto-cjk` |
+
+- TTS 엔진은 `speakers.tsv`의 `rate`(macOS `say` wpm 기준)를 엔진별 속도로 **근사 매핑**합니다
+  (espeak `-s` ≈ wpm×1.1, SAPI Rate ≈ (wpm−200)/25, piper `length_scale` ≈ 200/wpm).
+  엔진마다 목소리 음질과 정확한 발화 길이는 다르지만 **시각 파이프라인(입모양·표정·합성·자막)은
+  완전히 동일**합니다. 총길이가 목표 범위(§`PROCESS.md` 6)를 벗어나면 01단계가 보정 지시를 냅니다.
+- 환경변수로 강제 지정도 가능합니다: `TTS_ENGINE=say|sapi|espeak|piper`, `CAPTION_FONT="..."`,
+  `SAPI_VOICE="..."`, `PIPER_MODEL=/path/to/model.onnx`, `FONTS_DIR=/path`.
 
 설치는 이 폴더에서 아래 한 줄이면 됩니다. (부품을 내려받는 과정입니다.)
 ```bash
